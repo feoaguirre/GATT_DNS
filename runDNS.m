@@ -38,11 +38,19 @@ if nargin == 2
     end
 end
 
+%% PARALELIZATION PARAMETERS
 %% Check if 2D or 3D
 tridimensional = mesh.z.n + mesh.z.buffer.i.n + mesh.z.buffer.f.n > 1; %#ok<*NODEF>
 if ~tridimensional
     p_col = 1;
+		[p_row,~] = get_p_row_col(caseFile,p_max,p_col);
+elseif tridimensional AND exist(p_row,'var') AND exist(p_col,'var')
+	p_row = p_row;
+	p_col =p_col;
+else
+		[p_row,p_col] = get_p_row_col(caseFile,p_max);
 end
+
 
 %% Add source code path
 addpath source
@@ -209,4 +217,69 @@ function varList = unpackStruct(structure)
             varList{end+1} = varName;
         end
     end
+end
+
+function [p_row,pcow] = get_p_row_col(baseFile,p_max,varArgin)
+
+    addpath source
+    addpath source/boundaries
+    
+		if ~exist(varArgin(1),'var')
+    
+	    eval(baseFile)
+	    p_row = p_row_max;
+	    p_col = 1;
+	    while p_row > 0
+	        try
+	            p_row
+	            meshAddFixedPoints
+	
+	            % Run mesh generator
+	            [mesh.X, mesh.x, mesh.nx] = generateMesh(domain.xi,domain.xf,mesh.x,'X');
+	            [mesh.Y, mesh.y, mesh.ny] = generateMesh(domain.yi,domain.yf,mesh.y,'Y');
+	            [mesh.Z, mesh.z, mesh.nz] = generateMesh(domain.zi,domain.zf,mesh.z,'Z');
+	
+	            %% Select boundary conditions
+	            [boundary,mesh] = getBoundaryConditions(flowType,mesh,flowParameters,[numMethods.neumannOrder numMethods.neumann2Order]);
+	
+	            domainSlicesY = getDomainSlices(mesh.ny,p_row);
+	            domainSlicesZ = getDomainSlices(mesh.nz,p_col);
+	
+	            [~] = initBoundaries(boundary,mesh,domainSlicesY,domainSlicesZ,p_row,p_col);
+	            
+	            return
+	        catch
+	            p_row = p_row - 1;
+	        end
+	    end
+
+			else.  %% need to implament something like lagrange multiplier or something here
+
+					eval(baseFile)
+	    p_row = p_row_max;
+	    p_col = 1;
+	    while p_row > 0
+	        try
+	            p_row
+	            meshAddFixedPoints
+	
+	            % Run mesh generator
+	            [mesh.X, mesh.x, mesh.nx] = generateMesh(domain.xi,domain.xf,mesh.x,'X');
+	            [mesh.Y, mesh.y, mesh.ny] = generateMesh(domain.yi,domain.yf,mesh.y,'Y');
+	            [mesh.Z, mesh.z, mesh.nz] = generateMesh(domain.zi,domain.zf,mesh.z,'Z');
+	
+	            %% Select boundary conditions
+	            [boundary,mesh] = getBoundaryConditions(flowType,mesh,flowParameters,[numMethods.neumannOrder numMethods.neumann2Order]);
+	
+	            domainSlicesY = getDomainSlices(mesh.ny,p_row);
+	            domainSlicesZ = getDomainSlices(mesh.nz,p_col);
+	
+	            [~] = initBoundaries(boundary,mesh,domainSlicesY,domainSlicesZ,p_row,p_col);
+	            
+	            return
+	        catch
+	            p_row = p_row - 1;
+	        end
+
+			end
 end
