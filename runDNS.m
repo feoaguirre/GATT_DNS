@@ -224,12 +224,15 @@ function [p_row,pcow] = get_p_row_col(baseFile,p_max,varArgin)
     addpath source
     addpath source/boundaries
     
-		if ~exist(varArgin(1),'var')
+		if exist(varArgin(1),'var')
     
 	    eval(baseFile)
-	    p_row = p_row_max;
+	    p_row = p_max;
 	    p_col = 1;
-	    while p_row > 0
+
+
+
+	    while p_col > 0
 	        try
 	            p_row
 	            meshAddFixedPoints
@@ -253,13 +256,22 @@ function [p_row,pcow] = get_p_row_col(baseFile,p_max,varArgin)
 	        end
 	    end
 
-			else.  %% need to implament something like lagrange multiplier or something here
+			else.  %% need to check if everything works correctly
 
-					eval(baseFile)
-	    p_row = p_row_max;
-	    p_col = 1;
-	    while p_row > 0
-	        try
+			eval(baseFile)
+
+
+maxProduct = 0;
+    p_row = 1;
+    p_col = p_max;
+    for i = p_max:-1:1
+        if mod(N, i) == 0
+            j = N / i;
+            if i * j <= N && i * j > maxProduct
+                p_row = i;
+                p_col = j;
+                
+							try
 	            p_row
 	            meshAddFixedPoints
 	
@@ -277,9 +289,14 @@ function [p_row,pcow] = get_p_row_col(baseFile,p_max,varArgin)
 	            [~] = initBoundaries(boundary,mesh,domainSlicesY,domainSlicesZ,p_row,p_col);
 	            
 	            return
-	        catch
-	            p_row = p_row - 1;
-	        end
+				 end
 
-			end
+
+            end
+        end
+    end
+
+
+
+	        
 end
